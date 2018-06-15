@@ -481,3 +481,22 @@ def TheGameSampling(seed1=440,seed2=614):
     screen_names = screen_names.drop_duplicates()
     screen_names.rename('screen_name')
     screen_names.to_csv(path + "TheGame/" + "TheGameScreenNames.csv",index=False)
+
+# This function will take in a query and pull the unique user_names of the
+# people that have sent a tweet containing that query.
+def FindTweeters(query,path,FileName,since_id=None):
+
+    # Create or open the file that we will be writing the names to
+    try:
+        f = open(path+FileName,'r+b')
+    except:
+        f = open(path+FileName,"w+")
+        f.write("screen_name\n")
+
+    print "Grabbing People that have tweeted " + query
+    for page in Cursor(client.search, q=query,rpp=100,result_type="recent",
+                        include_entities=True).pages(15):
+        for tweet in page:
+            f.write(tweet.user.screen_name + "\n")
+
+    f.close()
