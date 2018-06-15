@@ -488,15 +488,20 @@ def FindTweeters(query,path,FileName,since_id=None):
 
     # Create or open the file that we will be writing the names to
     try:
-        f = open(path+FileName,'r+b')
+        f = open(path+FileName,'r')
+        f.close()
+        f = open(path+FileName,"a")
     except:
         f = open(path+FileName,"w+")
         f.write("screen_name\n")
 
+    i = 0
     print "Grabbing People that have tweeted " + query
-    for page in Cursor(client.search, q=query,rpp=100,result_type="recent",
+    for page in Cursor(client.search, q=query,count=100,result_type="recent",
                         include_entities=True).pages(15):
         for tweet in page:
             f.write(tweet.user.screen_name + "\n")
-
+            print i
+            i=i+1
+            
     f.close()
