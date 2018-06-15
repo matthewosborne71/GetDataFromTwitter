@@ -359,12 +359,7 @@ def GrabCongressProfileData():
 
 # This will grab all the tweets from a list of users, you need a code that
 # gives you a path to store the data, and a folder name as inputself.
-def GrabTweets(ScreenNameSource,folder):
-    import DataPaths
-
-    # get the data storage path
-    path = DataPaths.GetPaths()
-
+def GrabTweets(path,ScreenNameSource,folder):
     # get the api
     client = get_twitter_client()
 
