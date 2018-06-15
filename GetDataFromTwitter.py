@@ -501,7 +501,6 @@ def FindTweeters(query,path,FileName,since_id=None):
                         include_entities=True).pages(15):
         for tweet in page:
             f.write(tweet.user.screen_name + "\n")
-            print i
-            i=i+1
-            
+
+
     f.close()
