@@ -49,6 +49,66 @@ def internet_on():
         print "No Internet"
         return False
 
+def GrabAllProfiles(path,csv,file):
+    import re
+    from time import sleep
+
+    print "Creating document to hold data"
+    f = open(path + file, "w+")
+    f.write("screen_name,id_str,created_at,protected,statuses_count," +
+            "verified,followers_count,friends_count,description,location\n")
+    f.close()
+
+    g = open(path + "Errors.txt","w+")
+    g.write("Name,Error\n")
+    g.close
+
+    print "Loading in Names"
+    a = pd.read_csv(path + csv)
+
+    f = open(path + file,"a")
+    g = open(path + "Errors.txt","a")
+    i = 1
+
+    for Person in a['screen_name']:
+
+        print "Attempting to Grab Data for " + Person
+        if i%180 == 0:
+            sleep(15*60)
+
+        print "Checking Internet Status"
+        while internet_on() == False:
+            print "Internet is down! Let me rest"
+            time.sleep(60)
+
+        Profile = GrabProfile(Person)
+        print "Data Retrieved!"
+        print "Let me Write this down!"
+        if Profile != "GrabProfile Didn't Work":
+            description = Profile.description
+            description = unicodedata.normalize('NFKD',description).encode('ascii','ignore')
+            description = str.replace(description, '\n', ' ')
+            description = str.replace(description, '\r', ' ')
+            description = str.replace(description, ',', '')
+
+            if Profile.location == '':
+                f.write(str(Profile.screen_name) + "," + str(Profile.id_str)  +
+                    "," + str(Profile.created_at)  + "," + str(Profile.protected) + "," +
+                    str(Profile.statuses_count)  + "," + str(Profile.verified) + "," +
+                    str(Profile.followers_count) + "," + str(Profile.friends_count) + "," +
+                    description + "," + "None\n")
+            else:
+                f.write(str(Profile.screen_name) + "," + str(Profile.id_str)  +
+                    "," + str(Profile.created_at)  + "," + str(Profile.protected) + "," +
+                    str(Profile.statuses_count)  + "," + str(Profile.verified) + "," +
+                    str(Profile.followers_count) + "," + str(Profile.friends_count) + "," +
+                    description +
+                    "," + re.sub('[,]','',unicodedata.normalize('NFKD',Profile.location).encode('ascii','ignore')) +
+                    "\n")
+        else:
+            g.write(Person + Profile + "\n")
+
+        i=i+1
 
 def GrabMediaProfiles():
     import re
