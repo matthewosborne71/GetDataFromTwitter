@@ -7,9 +7,10 @@ import matplotlib.pyplot as plt
 path = DP.GetPaths()
 
 
-def RTEdgeList(screen_namesSource,TweetFiles,EListloc):
+def RTEdgeList(screen_namesSource,TweetFiles,EListloc,start,stop):
     print "Creating EdgeList file..."
-    f = open(path+EListloc+"RTEdgeList.csv","w+")
+    f = open(path + EListloc + "RTEdgeList" + str(start) + "_" + str(stop) +
+            ".csv","w+")
     f.write("Name1,Name2,Weight\n")
 
 
@@ -19,14 +20,13 @@ def RTEdgeList(screen_namesSource,TweetFiles,EListloc):
     del a
 
 
-    i = 0
-    for name1 in screen_names:
-        print "Getting edges for " + name1
+    i = start
+    for name1 in screen_names[start:stop]:
+        #print "Getting edges for " + name1
         RTDF = pd.read_csv(path + TweetFiles + name1 + "Retweets.csv")
         RTset = set(RTDF['RTUser'].value_counts().index)
         del RTDF
 
-        print i
         for name2 in screen_names[i+1:]:
             #print name2
             tempDF = pd.read_csv(path + TweetFiles + name2 + "Retweets.csv")
@@ -44,7 +44,7 @@ def RTEdgeList(screen_namesSource,TweetFiles,EListloc):
         del RTset
         i=i+1
 
-    print "All Done!"
+    #print "All Done!"
     f.close()
 
 def RTNetwork(EdgeList,Tol):
