@@ -1,13 +1,10 @@
 # Make Networks
 import pandas as pd
-import DataPaths as DP
 import networkx as nx
 import matplotlib.pyplot as plt
 
-path = DP.GetPaths()
 
-
-def RTEdgeList(screen_namesSource,TweetFiles,EListloc,start,stop):
+def RTEdgeList(path,screen_namesSource,TweetFiles,EListloc,start,stop):
     print "Creating EdgeList file..."
     f = open(path + EListloc + "RTEdgeList" + str(start) + "_" + str(stop) +
             ".csv","w+")
@@ -47,7 +44,7 @@ def RTEdgeList(screen_namesSource,TweetFiles,EListloc,start,stop):
     #print "All Done!"
     f.close()
 
-def RTNetwork(EdgeList,Tol):
+def ShowRTNetwork(EdgeList,nodes_csv,Tol):
     maxWeight = float(max(EdgeList['Weight']))
 
     Weights = list(EdgeList['Weight'][EdgeList['Weight']>=Tol].values.flatten()/maxWeight)
@@ -55,11 +52,29 @@ def RTNetwork(EdgeList,Tol):
     User1 = list(EdgeList['Name1'][EdgeList['Weight']>=Tol].values.flatten())
     User2 = list(EdgeList['Name2'][EdgeList['Weight']>=Tol].values.flatten())
 
+    Attr = pd.read_csv(nodes_csv)
+
     del EdgeList
     EdgeList = zip(User1,User2,Weights)
     G = nx.Graph()
     nodes = list(set(User1).union(set(User2)))
+
     G.add_nodes_from(nodes)
+
+    node_size = []
+    Colors = []
+    #label = []
+    for node in G.nodes():
+        #G.nodes[node]['color'] = Attr.color[Attr.screen_name==node].values[0]
+        #G.nodes[node]['node_size'] = Attr.node_size[Attr.screen_name==node].values[0]
+        G.nodes[node]['label'] = Attr.Name[Attr.screen_name==node].values[0]
+        node_size.extend([float(Attr.node_size[Attr.screen_name==node].values[0])])
+        Colors.extend([Attr.color[Attr.screen_name==node].values[0]])
+        #label.extend([Attr.Name[Attr.screen_name==node].values[0]])
+
+
+    del Attr
+
     G.add_weighted_edges_from(EdgeList)
     pos = nx.spring_layout(G)
     edgewidth = [d['weight'] for (u,v,d) in G.edges(data=True)]
@@ -71,10 +86,72 @@ def RTNetwork(EdgeList,Tol):
     plt.axis('off')
 
     # Draw the graph nodes
-    nx.draw_networkx_nodes(G,pos,node_size=10)
+    nx.draw_networkx_nodes(G,pos,node_color=Colors,node_size = node_size)
 
     # Draw the graph edges
     nx.draw_networkx_edges(G,pos,width=Weights)
 
+    #nx.draw_networkx_labels(G,pos,nx.get_node_attributes(G,'label'),font_size=10)
+
     # This opens the plot on your machine
     plt.show()
+
+def BuildGraph(EdgeList,nodes_csv,Tol):
+    maxWeight = float(max(EdgeList['Weight']))
+
+    Weights = list(EdgeList['Weight'][EdgeList['Weight']>=Tol].values.flatten()/maxWeight)
+
+    User1 = list(EdgeList['Name1'][EdgeList['Weight']>=Tol].values.flatten())
+    User2 = list(EdgeList['Name2'][EdgeList['Weight']>=Tol].values.flatten())
+
+    Attr = pd.read_csv(nodes_csv)
+
+    del EdgeList
+    EdgeList = zip(User1,User2,Weights)
+    G = nx.Graph()
+    nodes = list(set(User1).union(set(User2)))
+
+    G.add_nodes_from(nodes)
+
+    node_size = []
+    Colors = []
+
+    for node in G.nodes():
+        node_size.extend([float(Attr.node_size[Attr.screen_name==node].values[0])])
+        Colors.extend([Attr.color[Attr.screen_name==node].values[0]])
+
+    del Attr
+
+    G.add_weighted_edges_from(EdgeList)
+    pos = nx.spring_layout(G)
+    edgewidth = [d['weight'] for (u,v,d) in G.edges(data=True)]
+
+    return G,pos,edgewidth,node_size,Colors
+
+def SaveNetworkFig(G,pos,edgewidth,node_size,Colors,FigName):
+    plt.figure(figsize=(9,9))
+    plt.axis('off')
+
+    nx.draw_networkx_nodes(G,pos,node_color=Colors,node_size = node_size)
+    nx.draw_networkx_edges(G,pos,width=edgewidth)
+
+    xpositions = []
+    ypositions = []
+    for node in G.nodes():
+        xpositions.extend([list(pos[node])[0]])
+        ypositions.extend([list(pos[node])[1]])
+    xmin = min(xpositions)
+    xmax = max(xpositions)
+    ymin = min(ypositions)
+    ymax = max(ypositions)
+    plt.ylim((ymin-.01,ymax+.01))
+    plt.xlim((xmin-.01,xmax+.01))
+
+    plt.savefig(fname = FigName,bbox_inches='tight')
+
+
+
+
+
+def SaveNetworkDrawing(EdgeList,Tol):
+    print "Hello"
