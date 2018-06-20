@@ -49,7 +49,7 @@ def internet_on():
         print "No Internet"
         return False
 
-def GrabAllProfiles(path,csv,file):
+def GrabAllProfiles(path,csv,file,Type):
     import re
     from time import sleep
 
@@ -68,298 +68,56 @@ def GrabAllProfiles(path,csv,file):
 
     f = open(path + file,"a")
     g = open(path + "Errors.txt","a")
-    i = 1
 
-    for Person in a['screen_name']:
+    for chunk in paginate(list(a['id']),100):
 
-        print "Attempting to Grab Data for " + Person
-        if i%180 == 0:
-            sleep(15*60)
 
-        print "Checking Internet Status"
+        print "Checking Internet Connection"
         while internet_on() == False:
-            print "Internet is down! Let me rest"
+            print "waiting for connection to return"
             time.sleep(60)
 
-        Profile = GrabProfile(Person)
-        print "Data Retrieved!"
-        print "Let me Write this down!"
-        if Profile != "GrabProfile Didn't Work":
-            description = Profile.description
+        users = client.lookup_users(chunk)
+        for user in users:
+            description = user.description
             description = unicodedata.normalize('NFKD',description).encode('ascii','ignore')
             description = str.replace(description, '\n', ' ')
             description = str.replace(description, '\r', ' ')
             description = str.replace(description, ',', '')
+            description = str.replace(description,"'",'')
+            description = str.replace(description,'"','')
 
-            if Profile.location == '':
-                f.write(str(Profile.screen_name) + "," + str(Profile.id_str)  +
-                    "," + str(Profile.created_at)  + "," + str(Profile.protected) + "," +
-                    str(Profile.statuses_count)  + "," + str(Profile.verified) + "," +
-                    str(Profile.followers_count) + "," + str(Profile.friends_count) + "," +
-                    description + "," + "None\n")
-            else:
-                f.write(str(Profile.screen_name) + "," + str(Profile.id_str)  +
-                    "," + str(Profile.created_at)  + "," + str(Profile.protected) + "," +
-                    str(Profile.statuses_count)  + "," + str(Profile.verified) + "," +
-                    str(Profile.followers_count) + "," + str(Profile.friends_count) + "," +
-                    description +
-                    "," + re.sub('[,]','',unicodedata.normalize('NFKD',Profile.location).encode('ascii','ignore')) +
-                    "\n")
-        else:
-            g.write(Person + Profile + "\n")
+            location = user.location
+            location = unicodedata.normalize('NFKD',location).encode('ascii','ignore')
+            location = str.replace(location, '\n', ' ')
+            location = str.replace(location, '\r', ' ')
+            location = str.replace(location, ',', '')
+            location = str.replace(location,"'",'')
+            location = str.replace(location,'"','')
 
-        i=i+1
+            screen_name = user.screen_name
+            id_str = user.id_str
+            created_at = str(user.created_at)
+            protected = str(user.protected)
+            statuses_count  = str(user.statuses_count)
+            verified = str(user.verified)
+            followers_count = str(user.followers_count)
+            friends_count = str(user.friends_count)
 
-def GrabMediaProfiles():
-    import re
-    from time import sleep
-    import DataPaths as DP
+            #"screen_name,id_str,created_at,protected,statuses_count," +
+                    #"verified,followers_count,friends_count,description,location\n"
 
-    path = DP.GetPaths()
+            f.write(screen_name + "," + id_str + "," + created_at + "," + protected
+                    + "," + statuses_count + "," + verified + "," + followers_count
+                    + "," + friends_count + "," + description + "," + location
+                    + "\n")
 
-    print "Creating document to hold data"
-    f = open(path + "Media/" + "MediaProfiles.csv","w+")
-    f.write("screen_name,id_str,created_at,protected,statuses_count," +
-            "verified,followers_count,friends_count,description,location\n")
     f.close()
-
-    g = open(path + "Media/" + "Errors.txt","w+")
-    g.write("Name,Error\n")
-    g.close
-
-    print "Loading in Names"
-    a = pd.read_csv(path + "Media/" + "MediaOutletsScreenNames.csv")
-
-    f = open(path + "Media/" + "MediaProfiles.csv","a")
-    g = open(path + "Media/" + "Errors.txt","a")
-    i = 1
-
-    for Person in a['screen_name']:
-
-        print "Attempting to Grab Data for " + Person
-        if i%180 == 0:
-            sleep(16*60)
-
-        Profile = GrabProfile(Person)
-        print "Data Retrieved!"
-        print "Let me Write this down!"
-        if Profile != "GrabProfile Didn't Work":
-            description = Profile.description
-            description = unicodedata.normalize('NFKD',description).encode('ascii','ignore')
-            description = str.replace(description, '\n', ' ')
-            description = str.replace(description, '\r', ' ')
-            description = str.replace(description, ',', '')
-
-            if Profile.location == '':
-                f.write(str(Profile.screen_name) + "," + str(Profile.id_str)  +
-                    "," + str(Profile.created_at)  + "," + str(Profile.protected) + "," +
-                    str(Profile.statuses_count)  + "," + str(Profile.verified) + "," +
-                    str(Profile.followers_count) + "," + str(Profile.friends_count) + "," +
-                    description + "," + "None\n")
-            else:
-                f.write(str(Profile.screen_name) + "," + str(Profile.id_str)  +
-                    "," + str(Profile.created_at)  + "," + str(Profile.protected) + "," +
-                    str(Profile.statuses_count)  + "," + str(Profile.verified) + "," +
-                    str(Profile.followers_count) + "," + str(Profile.friends_count) + "," +
-                    description +
-                    "," + re.sub('[,]','',unicodedata.normalize('NFKD',Profile.location).encode('ascii','ignore')) +
-                    "\n")
-        else:
-            g.write(Person + Profile + "\n")
-
-        i=i+1
-
-
-
-
-def GrabCelebProfiles():
-    import re
-    from time import sleep
-
-    print "Creating document to hold data"
-    f = open("CelebProfiles.csv","w+")
-    f.write("screen_name,id_str,created_at,protected,statuses_count," +
-            "verified,followers_count,friends_count,description,location\n")
-    f.close()
-
-    g = open("Errors.txt","w+")
-    g.write("Name,Error\n")
-    g.close
-
-    print "Loading in Names"
-    a = pd.read_csv("CelebsScreen_Names.csv")
-
-    f = open("CelebProfiles.csv","a")
-    g = open("Errors.txt","a")
-    i = 1
-
-    for Person in a['screen_name']:
-
-        print "Attempting to Grab Data for " + Person
-        if i%180 == 0:
-            sleep(16*60)
-
-        Profile = GrabProfile(Person)
-        print "Data Retrieved!"
-        print "Let me Write this down!"
-        if Profile != "GrabProfile Didn't Work":
-            description = Profile.description
-            description = unicodedata.normalize('NFKD',description).encode('ascii','ignore')
-            description = str.replace(description, '\n', ' ')
-            description = str.replace(description, '\r', ' ')
-            description = str.replace(description, ',', '')
-
-            if Profile.location == '':
-                f.write(str(Profile.screen_name) + "," + str(Profile.id_str)  +
-                    "," + str(Profile.created_at)  + "," + str(Profile.protected) + "," +
-                    str(Profile.statuses_count)  + "," + str(Profile.verified) + "," +
-                    str(Profile.followers_count) + "," + str(Profile.friends_count) + "," +
-                    description + "," + "None\n")
-            else:
-                f.write(str(Profile.screen_name) + "," + str(Profile.id_str)  +
-                    "," + str(Profile.created_at)  + "," + str(Profile.protected) + "," +
-                    str(Profile.statuses_count)  + "," + str(Profile.verified) + "," +
-                    str(Profile.followers_count) + "," + str(Profile.friends_count) + "," +
-                    description +
-                    "," + re.sub('[,]','',unicodedata.normalize('NFKD',Profile.location).encode('ascii','ignore')) +
-                    "\n")
-        else:
-            g.write(Person + Profile + "\n")
-
-        i=i+1
-
-
-
-def GrabNBAProfiles():
-    import re
-    from time import sleep
-
-    print "Creating document to hold data"
-    f = open("NBANonPlayerProfiles.csv","w+")
-    f.write("screen_name,id_str,created_at,protected,statuses_count," +
-            "verified,followers_count,friends_count,description,location\n")
-    f.close()
-
-    g = open("Errors.txt","w+")
-    g.write("Name,Error\n")
-    g.close
-
-    print "Loading in Names"
-    a = pd.read_csv("NBA_NonPlayers_screen_names.csv")
-
-    f = open("NBANonPlayerProfiles.csv","a")
-    g = open("Errors.txt","a")
-    i = 1
-
-    for Person in a['screen_name']:
-
-        print "Attempting to Grab Data for " + Person
-        if i%180 == 0:
-            sleep(16*60)
-
-        Profile = GrabProfile(Person)
-        print "Data Retrieved!"
-        print "Let me Write this down!"
-        if Profile != "GrabProfile Didn't Work":
-            description = Profile.description
-            description = unicodedata.normalize('NFKD',description).encode('ascii','ignore')
-            description = str.replace(description, '\n', ' ')
-            description = str.replace(description, '\r', ' ')
-            description = str.replace(description, ',', '')
-
-            if Profile.location == '':
-                f.write(str(Profile.screen_name) + "," + str(Profile.id_str)  +
-                    "," + str(Profile.created_at)  + "," + str(Profile.protected) + "," +
-                    str(Profile.statuses_count)  + "," + str(Profile.verified) + "," +
-                    str(Profile.followers_count) + "," + str(Profile.friends_count) + "," +
-                    description + "," + "None\n")
-            else:
-                f.write(str(Profile.screen_name) + "," + str(Profile.id_str)  +
-                    "," + str(Profile.created_at)  + "," + str(Profile.protected) + "," +
-                    str(Profile.statuses_count)  + "," + str(Profile.verified) + "," +
-                    str(Profile.followers_count) + "," + str(Profile.friends_count) + "," +
-                    description +
-                    "," + re.sub('[,]','',unicodedata.normalize('NFKD',Profile.location).encode('ascii','ignore')) +
-                    "\n")
-        else:
-            g.write(Person + Profile + "\n")
-
-        i=i+1
-
-# Grab Profile Data for all congressman, can be changed to grab for any list
-# of screen_names
-def GrabCongressProfileData():
-    import re
-    from time import sleep
-    # Note, 180 profiles every 15 minutes
-
-    # Create a csv file that will hold the profile info
-    print "Creating the document that will hold the profile data"
-    f = open("CongressionalTwitterProfiles.csv","w+")
-    f.write("screen_name,id_str,created_at,protected,statuses_count," +
-            "verified,followers_count,friends_count,description,location\n")
-    f.close()
-
-    # Create an error file to hold any user that has a typo in their screen_name
-    g = open("Errors.txt","w+")
-    g.write("CongressPerson,Error\n")
-    g.close
-
-    # Load in the files holding the screen_names of the congressmen
-    print "Loading in the 115th Congress"
-    a = pd.read_csv("HouseTwitter.csv")
-    print a.head()
-    b = pd.read_csv("SenateTwitter.csv")
-    print b.head()
-    c = a.append(b)
-
-    print c.head()
-
-    # open csv so it can be appended to
-    f = open("CongressionalTwitterProfiles.csv","a")
-    g = open("Errors.txt","a")
-    i = 1
-
-
-    #sleep(15*60) # This is only temporary and should be removed!
-    for Person in c['screen_name']:
-
-        print "Attempting to Grab Data for " + Person
-        if i%180 == 0:
-            sleep(16*60)
-
-        Profile = GrabProfile(Person)
-        print "Data Retrieved!"
-        print "Let me Write this down!"
-        if Profile != "GrabProfile Didn't Work":
-            description = Profile.description
-            description = unicodedata.normalize('NFKD',description).encode('ascii','ignore')
-            description = str.replace(description, '\n', ' ')
-            description = str.replace(description, '\r', ' ')
-            description = str.replace(description, ',', '')
-
-            if Profile.location == '':
-                f.write(str(Profile.screen_name) + "," + str(Profile.id_str)  +
-                    "," + str(Profile.created_at)  + "," + str(Profile.protected) + "," +
-                    str(Profile.statuses_count)  + "," + str(Profile.verified) + "," +
-                    str(Profile.followers_count) + "," + str(Profile.friends_count) + "," +
-                    description + "," + "None\n")
-            else:
-                f.write(str(Profile.screen_name) + "," + str(Profile.id_str)  +
-                    "," + str(Profile.created_at)  + "," + str(Profile.protected) + "," +
-                    str(Profile.statuses_count)  + "," + str(Profile.verified) + "," +
-                    str(Profile.followers_count) + "," + str(Profile.friends_count) + "," +
-                    description +
-                    "," + re.sub('[,]','',unicodedata.normalize('NFKD',Profile.location).encode('ascii','ignore')) +
-                    "\n")
-        else:
-            g.write(Person + Profile + "\n")
-
-        i=i+1
 
 # This will grab all the tweets from a list of users, you need a code that
 # gives you a path to store the data, and a folder name as inputself.
-def GrabTweets(path,ScreenNameSource,folder):
+# Source must be either 'screen_name' or 'id'
+def GrabTweets(path,Source,folder,Type):
     # get the api
     client = get_twitter_client()
 
@@ -367,8 +125,8 @@ def GrabTweets(path,ScreenNameSource,folder):
     Errors.write("Log of errors for run at " + str(datetime.datetime.now()) + ".\n")
 
     # read in the screen_names, note currently for nba players
-    df = pd.read_csv(path + ScreenNameSource)
-    Users = df['screen_name']
+    df = pd.read_csv(path + Source)
+    Users = df[Type]
 
     # for each user in the list of screen_names
     for name in Users:
@@ -379,36 +137,57 @@ def GrabTweets(path,ScreenNameSource,folder):
             time.sleep(60)
 
         try:
-            Timeline = Cursor(client.user_timeline, screen_name = name, count = 200).pages(16)
+            if Type == 'id':
+                Timeline = Cursor(client.user_timeline, user_id = name,tweet_mode='extended',count = 200).pages(16)
+            elif Type == 'screen_name':
+                Timeline = Cursor(client.user_timeline, screen_name = name,tweet_mode='extended',count = 200).pages(16)
+            else:
+                print "Didn't enter correct type. Try again"
+                break
+
             # t will hold all of the tweets
-            t = open(path + folder + name + ".csv", "w+")
+            t = open(path + folder + str(name) + ".csv", "w+")
             t.write("author,TweetID,created_at,retweet,retweet_count,favorite_count,text\n")
 
             # h will hold all the individual hashtags used
-            h = open(path + folder + name + "Hashtags.csv", "w+")
+            h = open(path + folder + str(name) + "Hashtags.csv", "w+")
             h.write("author,tweetID,hashtag\n")
 
             # m will hold all the individual mentions used
-            m = open(path + folder + name + "Mentions.csv","w+")
+            m = open(path + folder + str(name) + "Mentions.csv","w+")
             m.write("author,tweetID,mentionName\n")
 
-            r = open(path + folder + name + "Retweets.csv","w+")
+            r = open(path + folder + str(name) + "Retweets.csv","w+")
             r.write("author,tweetID,RTUser,RTtext\n")
 
-            print "Getting the tweets from " + name
+            print "Getting the tweets from " + str(name)
             i = 0
             for page in Timeline:
                 for status in page:
                     if i%1000 == 0:
                         print i
-                    tweet = status.text
+
+                    if 'retweeted_status' in dir(status):
+                        retweet = "True"
+                        RTUser = status.retweeted_status.user.screen_name
+                        tweet = status.retweeted_status.full_text
+
+                    else:
+                        retweet = "False"
+                        tweet = status.full_text
+
                     tweet = unicodedata.normalize('NFKD', tweet).encode('ascii','ignore')
                     tweet = str.replace(tweet, '\n', ' ')
                     tweet = str.replace(tweet, '\r', ' ')
                     tweet = str.replace(tweet, ',', '')
+                    tweet = str.replace(tweet, '"','')
+                    tweet = str.replace(tweet,"'",'')
                     #s = s.encode('ascii',errors='ignore') decode('utf-8').encode('ascii', errors='ignore')
 
-                    retweet = str(IsRT(tweet))
+                    if retweet == "True":
+                        RTtext = tweet
+                        tweet = "RT @" + RTUser + ": " + RTtext
+
                     t.write(status.user.id_str + "," + str(status.id) + ","  + str(status.created_at) +
                     "," + retweet + "," + str(status.retweet_count) + "," +
                     str(status.favorite_count) + "," + tweet + "\n")
@@ -418,7 +197,6 @@ def GrabTweets(path,ScreenNameSource,folder):
                     for mention in status.entities['user_mentions']:
                         m.write(status.user.id_str + "," + str(status.id) + "," + mention['screen_name'] + "\n")
                     if retweet == "True":
-                        RTUser,RTtext = ExtractRTInfo(tweet)
                         r.write(status.user.id_str + "," + str(status.id) + "," +
                                 RTUser + "," + RTtext + "\n")
                     i=i+1
@@ -428,10 +206,9 @@ def GrabTweets(path,ScreenNameSource,folder):
             m.close()
             r.close()
         except:
-            Errors.write(name + " had and error.\n")
-            print "There was an error for " + name
-            print "I need to rest for a minute."
-            time.sleep(60)
+            Errors.write(str(name) + " had and error.\n")
+            print "There was an error for " + str(name)
+
 
 
 
@@ -548,14 +325,14 @@ def FindTweeters(query,path,FileName,since_id=None):
         f = open(path+FileName,"a")
     except:
         f = open(path+FileName,"w+")
-        f.write("screen_name\n")
+        f.write("id\n")
 
     i = 0
     print "Grabbing People that have tweeted " + query
     for page in Cursor(client.search, q=query,count=100,result_type="recent",
                         include_entities=True).pages(15):
         for tweet in page:
-            f.write(tweet.user.screen_name + "\n")
+            f.write(tweet.user.id_str + "\n")
 
 
     f.close()

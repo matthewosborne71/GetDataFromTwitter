@@ -13,19 +13,23 @@ def RTEdgeList(path,screen_namesSource,TweetFiles,EListloc,start,stop):
 
     print "Reading in the screen_names"
     a = pd.read_csv(path +  screen_namesSource)
-    screen_names = a['screen_name']
+    screen_names = a['id']
     del a
-
 
     i = start
     for name1 in screen_names[start:stop]:
-        #print "Getting edges for " + name1
+        print "Getting edges for " + str(name1)
+        print i
+        name1 = str(name1)
         RTDF = pd.read_csv(path + TweetFiles + name1 + "Retweets.csv")
         RTset = set(RTDF['RTUser'].value_counts().index)
         del RTDF
 
         for name2 in screen_names[i+1:]:
-            #print name2
+
+            name2 = str(name2)
+            print name2
+
             tempDF = pd.read_csv(path + TweetFiles + name2 + "Retweets.csv")
             tempSet = set(tempDF['RTUser'].value_counts().index)
             del tempDF
@@ -33,13 +37,14 @@ def RTEdgeList(path,screen_namesSource,TweetFiles,EListloc,start,stop):
             c = RTset.intersection(tempSet)
 
             if bool(c) == True:
-                f.write(name1 + "," + name2 + "," + str(len(c)) + "\n")
+                f.write(str(name1) + "," + str(name2) + "," + str(len(c)) + "\n")
 
             del tempSet
             del c
 
         del RTset
         i=i+1
+
 
     #print "All Done!"
     f.close()
@@ -61,15 +66,15 @@ def ShowRTNetwork(EdgeList,nodes_csv,Tol):
 
     G.add_nodes_from(nodes)
 
-    node_size = []
-    Colors = []
+    #node_size = []
+    #Colors = []
     #label = []
-    for node in G.nodes():
+    #for node in G.nodes():
         #G.nodes[node]['color'] = Attr.color[Attr.screen_name==node].values[0]
         #G.nodes[node]['node_size'] = Attr.node_size[Attr.screen_name==node].values[0]
-        G.nodes[node]['label'] = Attr.Name[Attr.screen_name==node].values[0]
-        node_size.extend([float(Attr.node_size[Attr.screen_name==node].values[0])])
-        Colors.extend([Attr.color[Attr.screen_name==node].values[0]])
+        #G.nodes[node]['label'] = Attr.Name[Attr.screen_name==node].values[0]
+        #node_size.extend([float(Attr.node_size[Attr.screen_name==node].values[0])])
+        #Colors.extend([Attr.color[Attr.screen_name==node].values[0]])
         #label.extend([Attr.Name[Attr.screen_name==node].values[0]])
 
 
@@ -86,17 +91,18 @@ def ShowRTNetwork(EdgeList,nodes_csv,Tol):
     plt.axis('off')
 
     # Draw the graph nodes
-    nx.draw_networkx_nodes(G,pos,node_color=Colors,node_size = node_size)
+    nx.draw_networkx_nodes(G,pos,node_size = 5)
 
     # Draw the graph edges
-    nx.draw_networkx_edges(G,pos,width=Weights)
+    nx.draw_networkx_edges(G,pos,width=edgewidth)
 
     #nx.draw_networkx_labels(G,pos,nx.get_node_attributes(G,'label'),font_size=10)
 
     # This opens the plot on your machine
     plt.show()
 
-def BuildGraph(EdgeList,nodes_csv,Tol):
+def BuildGraph(EdgeList,Tol):
+    #nodes_csv,,Label
     maxWeight = float(max(EdgeList['Weight']))
 
     Weights = list(EdgeList['Weight'][EdgeList['Weight']>=Tol].values.flatten()/maxWeight)
@@ -104,7 +110,11 @@ def BuildGraph(EdgeList,nodes_csv,Tol):
     User1 = list(EdgeList['Name1'][EdgeList['Weight']>=Tol].values.flatten())
     User2 = list(EdgeList['Name2'][EdgeList['Weight']>=Tol].values.flatten())
 
-    Attr = pd.read_csv(nodes_csv)
+    # Attr = pd.read_csv(nodes_csv)
+    # Attr['locate'] = "none"
+    # for i in range(len(Attr)):
+    #     Attr['locate'][i] = Attr['screen_name'][i].lower()
+    # print Attr.head()
 
     del EdgeList
     EdgeList = zip(User1,User2,Weights)
@@ -113,27 +123,40 @@ def BuildGraph(EdgeList,nodes_csv,Tol):
 
     G.add_nodes_from(nodes)
 
-    node_size = []
-    Colors = []
+    # node_size = []
+    # Colors = []
+    # labels = {}
+    #
+    # for node in G.nodes():
+    #     node_size.extend([Attr['node_size'][Attr['locate']==node.lower()].values[0]])
+    #     Colors.extend([Attr['color'][Attr['locate']==node.lower()].values[0]])
+    #
+    # if Label == "Yes":
+    #     for node in G.nodes():
+    #         labels[node] = node
 
-    for node in G.nodes():
-        node_size.extend([float(Attr.node_size[Attr.screen_name==node].values[0])])
-        Colors.extend([Attr.color[Attr.screen_name==node].values[0]])
-
-    del Attr
+    #del Attr
 
     G.add_weighted_edges_from(EdgeList)
     pos = nx.spring_layout(G)
     edgewidth = [d['weight'] for (u,v,d) in G.edges(data=True)]
 
-    return G,pos,edgewidth,node_size,Colors
+    # if Label == "Yes":
+    #     return G,pos,edgewidth#,node_size,Colors,labels
+    #else:
+    return G,pos,edgewidth#,node_size,Colors
 
-def SaveNetworkFig(G,pos,edgewidth,node_size,Colors,FigName):
+def SaveNetworkFig(G,pos,edgewidth,FigName):
+    #,node_size,Colors,FigName,Label,labels={}
     plt.figure(figsize=(9,9))
     plt.axis('off')
 
-    nx.draw_networkx_nodes(G,pos,node_color=Colors,node_size = node_size)
+    nx.draw_networkx_nodes(G,pos,node_size=5)
+    #node_color=Colors,node_size = node_size
     nx.draw_networkx_edges(G,pos,width=edgewidth)
+
+    # if Label == "Yes":
+    #     nx.draw_networkx_labels(G,pos,labels,font_size=10)
 
     xpositions = []
     ypositions = []
@@ -144,6 +167,10 @@ def SaveNetworkFig(G,pos,edgewidth,node_size,Colors,FigName):
     xmax = max(xpositions)
     ymin = min(ypositions)
     ymax = max(ypositions)
+    # if Label=="Yes":
+    #     plt.ylim((ymin-.05,ymax+.05))
+    #     plt.xlim((xmin-.05,xmax+.05))
+    # else:
     plt.ylim((ymin-.01,ymax+.01))
     plt.xlim((xmin-.01,xmax+.01))
 
