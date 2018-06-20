@@ -354,7 +354,7 @@ def FindTweeters(query,path,FileName,since_id=None):
                 tweet = "RT @" + RTUser + ": " + RTtext
 
 
-            f.write(status.user.id_str + "," + tweet "\n")
+            f.write(status.user.id_str + "," + tweet + "\n")
 
 
     f.close()
