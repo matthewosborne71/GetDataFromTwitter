@@ -4,16 +4,20 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 
-def RTEdgeList(path,screen_namesSource,TweetFiles,EListloc,start,stop):
+def EdgeList(path,screen_namesSource,TweetFiles,Type,start,stop):
+    if Type not in ["HT","RT","Ment"]:
+        print "Sorry " + Type + " is not currently a supported EdgeList type."
+        break
+
     print "Creating EdgeList file..."
-    f = open(path + EListloc + "RTEdgeList" + str(start) + "_" + str(stop) +
+    f = open(path + Type + "EdgeList" + str(start) + "_" + str(stop) +
             ".csv","w+")
     f.write("Name1,Name2,Weight\n")
 
 
     print "Reading in the screen_names"
     a = pd.read_csv(path +  screen_namesSource)
-    screen_names = a['id']
+    screen_names = a['screen_name']
     del a
 
     i = start
@@ -21,9 +25,9 @@ def RTEdgeList(path,screen_namesSource,TweetFiles,EListloc,start,stop):
         print "Getting edges for " + str(name1)
         print i
         name1 = str(name1)
-        RTDF = pd.read_csv(path + TweetFiles + name1 + "Retweets.csv")
-        RTset = set(RTDF['RTUser'].value_counts().index)
-        del RTDF
+        DF = pd.read_csv(path + TweetFiles + name1 + "Retweets.csv")
+        set = set(DF['RTUser'].value_counts().index)
+        del DF
 
         for name2 in screen_names[i+1:]:
 
@@ -34,7 +38,7 @@ def RTEdgeList(path,screen_namesSource,TweetFiles,EListloc,start,stop):
             tempSet = set(tempDF['RTUser'].value_counts().index)
             del tempDF
 
-            c = RTset.intersection(tempSet)
+            c = set.intersection(tempSet)
 
             if bool(c) == True:
                 f.write(str(name1) + "," + str(name2) + "," + str(len(c)) + "\n")
@@ -42,7 +46,7 @@ def RTEdgeList(path,screen_namesSource,TweetFiles,EListloc,start,stop):
             del tempSet
             del c
 
-        del RTset
+        del set
         i=i+1
 
 
@@ -177,6 +181,9 @@ def SaveNetworkFig(G,pos,edgewidth,FigName):
     plt.savefig(fname = FigName,bbox_inches='tight')
 
 
+def NumConnected(G):
+    num = nx.number_connected_components(G)
+    return num
 
 
 

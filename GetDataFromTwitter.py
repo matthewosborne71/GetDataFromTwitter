@@ -325,14 +325,36 @@ def FindTweeters(query,path,FileName,since_id=None):
         f = open(path+FileName,"a")
     except:
         f = open(path+FileName,"w+")
-        f.write("id\n")
+        f.write("id,foundTweet\n")
 
     i = 0
     print "Grabbing People that have tweeted " + query
     for page in Cursor(client.search, q=query,count=100,result_type="recent",
                         include_entities=True).pages(15):
-        for tweet in page:
-            f.write(tweet.user.id_str + "\n")
+        for status in page:
+            if 'retweeted_status' in dir(status):
+                retweet = "True"
+                RTUser = status.retweeted_status.user.screen_name
+                tweet = status.retweeted_status.full_text
+
+            else:
+                retweet = "False"
+                tweet = status.full_text
+
+            tweet = unicodedata.normalize('NFKD', tweet).encode('ascii','ignore')
+            tweet = str.replace(tweet, '\n', ' ')
+            tweet = str.replace(tweet, '\r', ' ')
+            tweet = str.replace(tweet, ',', '')
+            tweet = str.replace(tweet, '"','')
+            tweet = str.replace(tweet,"'",'')
+            #s = s.encode('ascii',errors='ignore') decode('utf-8').encode('ascii', errors='ignore')
+
+            if retweet == "True":
+                RTtext = tweet
+                tweet = "RT @" + RTUser + ": " + RTtext
+
+
+            f.write(status.user.id_str + "," + tweet "\n")
 
 
     f.close()
