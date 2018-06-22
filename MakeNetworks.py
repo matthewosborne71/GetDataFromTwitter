@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 def EdgeList(path,screen_namesSource,TweetFiles,Type,start,stop):
     if Type not in ["HT","RT","Ment"]:
         print "Sorry " + Type + " is not currently a supported EdgeList type."
-        break
 
     print "Creating EdgeList file..."
     f = open(path + Type + "EdgeList" + str(start) + "_" + str(stop) +
@@ -26,19 +25,18 @@ def EdgeList(path,screen_namesSource,TweetFiles,Type,start,stop):
         print i
         name1 = str(name1)
         DF = pd.read_csv(path + TweetFiles + name1 + "Retweets.csv")
-        set = set(DF['RTUser'].value_counts().index)
+        Set = set(DF['RTUser'].value_counts().index)
         del DF
 
         for name2 in screen_names[i+1:]:
 
             name2 = str(name2)
-            print name2
 
             tempDF = pd.read_csv(path + TweetFiles + name2 + "Retweets.csv")
             tempSet = set(tempDF['RTUser'].value_counts().index)
             del tempDF
 
-            c = set.intersection(tempSet)
+            c = Set.intersection(tempSet)
 
             if bool(c) == True:
                 f.write(str(name1) + "," + str(name2) + "," + str(len(c)) + "\n")
@@ -46,7 +44,7 @@ def EdgeList(path,screen_namesSource,TweetFiles,Type,start,stop):
             del tempSet
             del c
 
-        del set
+        del Set
         i=i+1
 
 
@@ -185,7 +183,106 @@ def NumConnected(G):
     num = nx.number_connected_components(G)
     return num
 
+def SizeGiantComp(G):
+    Gc = max(nx.connected_component_subgraphs(G),key=len)
+    n = len(Gc.nodes())
+    return n
+
+def GetComponents(G):
+    Comps = nx.connected_components(G)
+    return Comps
+
+def WhoRT(nodes):
+    # read in nodes
+    # output list of who they're RTing
+    print "IN Beta"
+
+class Component:
+    # Every Component instance is initialized with a set of nodes, a type that
+    # must be 'RT', 'HT', or 'Ment'
+    def __init__(self,Nodes,Type,MinWeight,DataPath,TweetPath):
+        self.Nodes = Nodes
+        self.Type = Type
+        self.MinWeight = MinWeight
+        self.NumNodes = len(Nodes)
+        self.DataPath = DataPath
+        self.TweetPath = DataPath + TweetPath
+
+    def  CommonRTs(self):
+        NodeList = list(self.Nodes)
+        TempDF = pd.read_csv(self.TweetPath + NodeList[0] + "Retweets.csv")
+        CommonRTs = set(TempDF['RTUser'])
+        del TempDF
+        for node in NodeList[1:]:
+            TempDF = pd.read_csv(self.TweetPath + node + "Retweets.csv")
+            CommonRTs = CommonRTs.intersection(set(TempDF['RTUser']))
+            del TempDF
+        return CommonRTs
+
+    def CommonHTs(self):
+        NodeList = list(self.Nodes)
+        TempDF = pd.read_csv(self.TweetPath + NodeList[0] + "Hashtags.csv")
+        CommonHTs = set(TempDF['hashtag'])
+        del TempDF
+        for node in NodeList[1:]:
+            TempDF = pd.read_csv(self.TweetPath + node + "Hashtags.csv")
+            CommonHTs = CommonHTs.intersection(set(TempDF['hashtag']))
+            del TempDF
+        return CommonHTs
+
+    def CommonMents(self):
+        # mentionName
+        NodeList = list(self.Nodes)
+        TempDF = pd.read_csv(self.TweetPath + NodeList[0] + "Mentions.csv")
+        CommonMents = set(TempDF['mentionName'])
+        del TempDF
+        for node in NodeList[1:]:
+            TempDF = pd.read_csv(self.TweetPath + node + "Mentions.csv")
+            CommonMents = CommonMents.intersection(set(TempDF['mentionName']))
+            del TempDF
+        return CommonMents
+
+    def DrawComponent(self):
+        a = pd.read_csv(self.DataPath+self.Type+"EdgeList.csv")
+        Edgelist = a[a['Name1'].isin(self.Nodes) & a['Name2'].isin(self.Nodes)]
+        Edgelist['Weight'] = Edgelist['Weight']/max(Edgelist['Weight'])
+        del a
 
 
-def SaveNetworkDrawing(EdgeList,Tol):
-    print "Hello"
+        G = nx.Graph()
+        G.add_nodes_from(self.Nodes)
+
+        Weights = list(Edgelist['Weight'].values.flatten())
+        User1 = list(Edgelist['Name1'].values.flatten())
+        User2 = list(Edgelist['Name2'].values.flatten())
+        del Edgelist
+        Edgelist = zip(User1,User2,Weights)
+
+        G.add_weighted_edges_from(Edgelist)
+
+        pos = nx.spring_layout(G)
+        edgewidth = [d['weight'] for (u,v,d) in G.edges(data=True)]
+
+        # open the matplotlib.plot figure and set it to be 20 by 20
+        plt.figure(figsize = (8,8))
+
+        # turn of the axis labels
+        plt.axis('off')
+
+        # Draw the graph nodes
+        if self.NumNodes > 20:
+            nx.draw_networkx_nodes(G,pos,node_size = 5)
+        else:
+            nx.draw_networkx_nodes(G,pos,node_size = 50)
+            labels = {}
+            for node in G.nodes():
+                labels[node] = node
+            nx.draw_networkx_labels(G,pos,labels,font_size=10)
+
+        # Draw the graph edges
+        nx.draw_networkx_edges(G,pos,width=edgewidth)
+
+        #nx.draw_networkx_labels(G,pos,nx.get_node_attributes(G,'label'),font_size=10)
+
+        # This opens the plot on your machine
+        plt.show()

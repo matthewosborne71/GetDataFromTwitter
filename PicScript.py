@@ -1,19 +1,22 @@
 import MakeNetworks as MN
 import pandas as pd
 
-a = pd.read_csv(r"C:\\Users\\Matthew Osborne\\Documents\\python_code\\DoYouEvenLift\\LukeObrien\\RTEdgeList.csv")
+path = r"C:\\Users\\Matthew Osborne\\Documents\\python_code\\DoYouEvenLift\\NBA\\"
+
+
+a = pd.read_csv(path + "RTEdgeList.csv")
 
 G,p0,ew = MN.BuildGraph(a,1)
-MN.SaveNetworkFig(G,p0,ew,r"C:\\Users\\Matthew Osborne\\Documents\\python_code\\DoYouEvenLift\\LukeObrien\\RTPics\\MinWeight"+str(1)+".png")
+MN.SaveNetworkFig(G,p0,ew,path+"RTPics\\MinWeight"+str(1)+".png")
 del G
 del ew
 
 
 
 stop = max(a.Weight)
-for i in range(2,stop):
+for i in range(2,400):
     G,p,ew = MN.BuildGraph(a,i)
-    MN.SaveNetworkFig(G,p0,ew,r"C:\\Users\\Matthew Osborne\\Documents\\python_code\\DoYouEvenLift\\LukeObrien\\RTPics\\MinWeight"+str(i)+".png")
+    MN.SaveNetworkFig(G,p0,ew,path+"RTPics\\MinWeight"+str(i)+".png")
     del G
     del ew
     del p
