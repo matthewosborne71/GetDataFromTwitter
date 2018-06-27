@@ -208,24 +208,183 @@ class Component:
         self.DataPath = DataPath
         self.TweetPath = DataPath + TweetPath
 
+    def TopRTs(self,Perc=False,NumAccount=False,n=10):
+        print "Finding the top " + str(n) + " retweeted accounts for " + str(self.NumNodes) +" nodes."
+        print "This may take a while."
+        RunningTally = []
+        for node in self.Nodes:
+            TempDF = pd.read_csv(self.TweetPath+str(node)+"Retweets.csv")
+            TempCount = TempDF['RTUser'].value_counts()
+            RTUsers = list(TempCount.index)
+            RTCounts = list(TempCount.values)
+            Append = zip(RTUsers,RTCounts)
+            RunningTally.extend(Append)
+
+
+
+        RunningTallyDF = pd.DataFrame(RunningTally,columns=['RTUser','TotalTimesRTed'])
+        del RunningTally
+
+        TopRTers = RunningTallyDF.groupby(['RTUser']).sum()
+        if NumAccount:
+            NumAccounts = RunningTallyDF['RTUser'].value_counts()
+            NumAccounts = pd.DataFrame(NumAccounts.values,index=NumAccounts.index,columns=['ByNumNodes'])
+        del RunningTallyDF
+
+        if Perc:
+            TopRTers['PercentageOfTotalRTs'] = (TopRTers['TotalTimesRTed']/sum(TopRTers.TotalTimesRTed))*100
+            TopRTers['PercentageOfTotalRTs'] = map(lambda x:round(x,2),TopRTers['PercentageOfTotalRTs'])
+
+        if NumAccount:
+            TopRTers = pd.concat([TopRTers,NumAccounts],axis=1)
+
+        TopRTers = TopRTers.sort_values(by='TotalTimesRTed',ascending=False)
+        print TopRTers.head(n)
+
+    def TopHTs(self,Perc=False,NumAccount=False,n=10):
+        print "Finding the top " + str(n) + " hashtags for " + str(self.NumNodes) +" nodes."
+        print "This may take a while."
+        RunningTally = []
+        for node in self.Nodes:
+            TempDF = pd.read_csv(self.TweetPath+str(node)+"Hashtags.csv")
+            TempCount = TempDF['hashtag'].value_counts()
+            HTs = list(TempCount.index)
+            HTCounts = list(TempCount.values)
+            Append = zip(HTs,HTCounts)
+            RunningTally.extend(Append)
+
+        RunningTallyDF = pd.DataFrame(RunningTally,columns=['Hashtag','TotalTimesUsed'])
+        del RunningTally
+
+        TopHTs = RunningTallyDF.groupby(['Hashtag']).sum()
+        if NumAccount:
+            NumAccounts = RunningTallyDF['Hashtag'].value_counts()
+            NumAccounts = pd.DataFrame(NumAccounts.values,index=NumAccounts.index,columns=['ByNumNodes'])
+        del RunningTallyDF
+
+        if Perc:
+            TopHTs['PercentageOfTotalHTs'] = (TopHTs['TotalTimesUsed']/sum(TopHTs.TotalTimesUsed))*100
+            TopHTs['PercentageOfTotalHTs'] = map(lambda x:round(x,2),TopHTs['PercentageOfTotalHTs'])
+
+        if NumAccount:
+            TopHTs = pd.concat([TopHTs,NumAccounts],axis=1)
+
+        TopHTs = TopHTs.sort_values(by='TotalTimesUsed',ascending=False)
+        print TopHTs.head(n)
+
+    def TopMents(self,Perc=False,NumAccount=False,n=10):
+        print "Finding the top " + str(n) + " mentions for " + str(self.NumNodes) +" nodes."
+        print "This may take a while."
+        RunningTally = []
+        for node in self.Nodes:
+            TempDF = pd.read_csv(self.TweetPath+str(node)+"Mentions.csv")
+            TempCount = TempDF['mentionName'].value_counts()
+            Ments = list(TempCount.index)
+            MentCounts = list(TempCount.values)
+            Append = zip(Ments,MentCounts)
+            RunningTally.extend(Append)
+
+        RunningTallyDF = pd.DataFrame(RunningTally,columns=['Mention','TotalTimesUsed'])
+        if NumAccount:
+            NumAccounts = RunningTallyDF['Mention'].value_counts()
+            NumAccounts = pd.DataFrame(NumAccounts.values,index=NumAccounts.index,columns=['ByNumNodes'])
+        del RunningTally
+
+        TopMents = RunningTallyDF.groupby(['Mention']).sum()
+        del RunningTallyDF
+
+        if Perc:
+            TopMents['PercentageOfTotalMents'] = (TopMents['TotalTimesUsed']/sum(TopMents.TotalTimesUsed))*100
+            TopMents['PercentageOfTotalMents'] = map(lambda x:round(x,2),TopMents['PercentageOfTotalMents'])
+
+        if NumAccount:
+            TopMents = pd.concat([TopMents,NumAccounts],axis=1)
+
+        TopMents = TopMents.sort_values(by='TotalTimesUsed',ascending=False)
+
+        print TopMents.head(n)
+
+    def NumNodesRTing(self,n=10):
+        print "Calculating for " + str(self.NumNodes) + " nodes."
+        print "This could take a bit."
+
+        RunningTally = []
+        for node in self.Nodes:
+            TempDF = pd.read_csv(self.TweetPath+str(node)+"Retweets.csv")
+            TempCount = TempDF['RTUser'].value_counts()
+            RTUsers = list(TempCount.index)
+            RunningTally.extend(RTUsers)
+
+        RunningTallyDF = pd.DataFrame(RunningTally,columns = ['RTUser'])
+        del RunningTally
+
+        NumNodes = RunningTallyDF['RTUser'].value_counts()
+
+        NumNodesDF = pd.DataFrame(NumNodes.values,index=NumNodes.index,columns=['NumAccountsThatRTed'])
+        del NumNodes
+
+        print NumNodesDF.head(n)
+
+    def NumNodesHTing(self,n):
+        print "Calculating for " + str(self.NumNodes) + " nodes."
+        print "This could take a bit."
+
+        RunningTally = []
+        for node in self.Nodes:
+            TempDF = pd.read_csv(self.TweetPath+str(node)+"Hashtags.csv")
+            TempCount = TempDF['hashtag'].value_counts()
+            HTs = list(TempCount.index)
+            RunningTally.extend(HTs)
+
+        RunningTallyDF = pd.DataFrame(RunningTally,columns = ['hashtag'])
+        del RunningTally
+
+        NumNodes = RunningTallyDF['hashtag'].value_counts()
+
+        NumNodesDF = pd.DataFrame(NumNodes.values,index=NumNodes.index,columns=['NumAccountsThatUsed'])
+        del NumNodes
+
+        print NumNodesDF.head(n)
+
+    def NumNodesMenting(self,n=10):
+        print "Calculating for " + str(self.NumNodes) + " nodes."
+        print "This could take a bit."
+
+        RunningTally = []
+        for node in self.Nodes:
+            TempDF = pd.read_csv(self.TweetPath+str(node)+"Mentions.csv")
+            TempCount = TempDF['hashtag'].value_counts()
+            Ments = list(TempCount.index)
+            RunningTally.extend(Ments)
+
+        RunningTallyDF = pd.DataFrame(RunningTally,columns = ['mentionName'])
+        del RunningTally
+
+        NumNodes = RunningTallyDF['mentionName'].value_counts()
+
+        NumNodesDF = pd.DataFrame(NumNodes.values,index=NumNodes.index,columns=['NumAccountsThatUsed'])
+        del NumNodes
+
+        print NumNodesDF.head(n)
+
     def  CommonRTs(self):
         NodeList = list(self.Nodes)
-        TempDF = pd.read_csv(self.TweetPath + NodeList[0] + "Retweets.csv")
+        TempDF = pd.read_csv(self.TweetPath + str(NodeList[0]) + "Retweets.csv")
         CommonRTs = set(TempDF['RTUser'])
         del TempDF
         for node in NodeList[1:]:
-            TempDF = pd.read_csv(self.TweetPath + node + "Retweets.csv")
+            TempDF = pd.read_csv(self.TweetPath + str(node) + "Retweets.csv")
             CommonRTs = CommonRTs.intersection(set(TempDF['RTUser']))
             del TempDF
         return CommonRTs
 
     def CommonHTs(self):
         NodeList = list(self.Nodes)
-        TempDF = pd.read_csv(self.TweetPath + NodeList[0] + "Hashtags.csv")
+        TempDF = pd.read_csv(self.TweetPath + str(NodeList[0]) + "Hashtags.csv")
         CommonHTs = set(TempDF['hashtag'])
         del TempDF
         for node in NodeList[1:]:
-            TempDF = pd.read_csv(self.TweetPath + node + "Hashtags.csv")
+            TempDF = pd.read_csv(self.TweetPath + str(node) + "Hashtags.csv")
             CommonHTs = CommonHTs.intersection(set(TempDF['hashtag']))
             del TempDF
         return CommonHTs
@@ -233,11 +392,11 @@ class Component:
     def CommonMents(self):
         # mentionName
         NodeList = list(self.Nodes)
-        TempDF = pd.read_csv(self.TweetPath + NodeList[0] + "Mentions.csv")
+        TempDF = pd.read_csv(self.TweetPath + str(NodeList[0]) + "Mentions.csv")
         CommonMents = set(TempDF['mentionName'])
         del TempDF
         for node in NodeList[1:]:
-            TempDF = pd.read_csv(self.TweetPath + node + "Mentions.csv")
+            TempDF = pd.read_csv(self.TweetPath + str(node) + "Mentions.csv")
             CommonMents = CommonMents.intersection(set(TempDF['mentionName']))
             del TempDF
         return CommonMents
