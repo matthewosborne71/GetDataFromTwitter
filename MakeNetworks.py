@@ -247,6 +247,7 @@ def SaveNetworkFig(G,pos,edgewidth,FigName):
 
 # Finally we save the figure on our machine!
     plt.savefig(fname = FigName,bbox_inches='tight')
+    plt.close()
 
 # Finds how many connected components a graph, G, has
 def NumConnected(G):
@@ -314,6 +315,8 @@ class Component:
         if NumAccount:
             TopRTers = pd.concat([TopRTers,NumAccounts],axis=1)
 
+        print "These are the top " + str(n) + " accounts that have been"
+        print "retweeted by the nodes in this component."
         TopRTers = TopRTers.sort_values(by='TotalTimesRTed',ascending=False)
         print TopRTers.head(n)
 
@@ -347,6 +350,9 @@ class Component:
             TopHTs = pd.concat([TopHTs,NumAccounts],axis=1)
 
         TopHTs = TopHTs.sort_values(by='TotalTimesUsed',ascending=False)
+
+        print "These are the top " + str(n) + " hashtags that have been"
+        print "used by the nodes in this component."
         print TopHTs.head(n)
 
 # Same as TopRTs but for mentions
@@ -380,6 +386,8 @@ class Component:
 
         TopMents = TopMents.sort_values(by='TotalTimesUsed',ascending=False)
 
+        print "These are the top " + str(n) + " mentions that have been"
+        print "made by the nodes in this component."
         print TopMents.head(n)
 
 # This function prints a list of the n accounts that have been retweeted by the
@@ -404,6 +412,9 @@ class Component:
         NumNodesDF = pd.DataFrame(NumNodes.values,index=NumNodes.index,columns=['NumAccountsThatRTed'])
         del NumNodes
 
+        print "These " + str(n) + " accounts have been retweeted by this"
+        print "component. The next column tells you how many nodes in the"
+        print "component have retweeted that account."
         print NumNodesDF.head(n)
 
 # This function is the same as NumNodesRTing but for hashtags.
@@ -426,6 +437,9 @@ class Component:
         NumNodesDF = pd.DataFrame(NumNodes.values,index=NumNodes.index,columns=['NumAccountsThatUsed'])
         del NumNodes
 
+        print "These " + str(n) + " hashtags have been tweeted by this"
+        print "component. The next column tells you how many nodes in the"
+        print "component have used that hashtag."
         print NumNodesDF.head(n)
 
 # This function is the same as NumNodesRTing but for mentions.
@@ -448,6 +462,9 @@ class Component:
         NumNodesDF = pd.DataFrame(NumNodes.values,index=NumNodes.index,columns=['NumAccountsThatUsed'])
         del NumNodes
 
+        print "These " + str(n) + " mentions have been tweeted by this"
+        print "component. The next column tells you how many nodes in the"
+        print "component have made that mention."
         print NumNodesDF.head(n)
 
 # This function returns a list of the accounts that have been retweeted by EVERY
@@ -535,3 +552,56 @@ class Component:
 
         # This opens the plot on your machine
         plt.show()
+
+def DrawWithComponent(G,pos,ew,Components):
+
+# Make the figure the graph will go on
+    plt.figure(figsize=(9,9))
+
+# turn off the axis
+    plt.axis('off')
+
+    NodeColors = []
+    NumComp = len(Components)
+    CMap = plt.cm.get_cmap('hsv',2*NumComp)
+    # Add colors
+
+
+    # for node in G.nodes():
+    #     for i in range(len(Components)):
+    #         if node in Components[i].Nodes:
+    #             NodeColors.extend([CMap(2*i)])
+    #
+    #
+    # nx.draw_networkx_nodes(G,pos,node_size=5,node_color = NodeColors)
+
+# draw the nodes and edges
+    for i in range(len(Components)):
+        nx.draw_networkx_nodes(G,pos,nodelist = list(Components[i].Nodes),node_size=5,node_color = CMap(2*i),label = "Component " + str(i))
+
+
+    for node in G.nodes():
+        for i in range(len(Components)):
+            if node in Components[i].Nodes:
+                NodeColors.extend([CMap(2*i)])
+
+
+    nx.draw_networkx_nodes(G,pos,node_size=5,node_color = NodeColors)
+    nx.draw_networkx_edges(G,pos,width=ew)
+
+# This code allows us to set our axes tight on the graph
+    xpositions = []
+    ypositions = []
+    for node in G.nodes():
+        xpositions.extend([list(pos[node])[0]])
+        ypositions.extend([list(pos[node])[1]])
+    xmin = min(xpositions)
+    xmax = max(xpositions)
+    ymin = min(ypositions)
+    ymax = max(ypositions)
+    plt.ylim((ymin-.01,ymax+.01))
+    plt.xlim((xmin-.01,xmax+.01))
+
+    plt.legend(loc='best')
+
+    plt.show()
