@@ -14,7 +14,8 @@ import urllib2
 import datetime
 
 # load in my API
-client = get_twitter_client()
+client1,client2,client3 = get_twitter_client()
+clients = [client1,client2,client3]
 
 def IsRT(tweet):
     if ":" not in tweet:
@@ -35,7 +36,7 @@ def ExtractRTInfo(tweet):
 # Grab a user's profile info
 def GrabProfile(screen_name):
     try:
-        profile = client.get_user(screen_name = screen_name)
+        profile = clients[0].get_user(screen_name = screen_name)
     except Exception:
         profile = "GrabProfile Didn't Work"
 
@@ -77,7 +78,7 @@ def GrabAllProfiles(path,csv,file,Type):
             print "waiting for connection to return"
             time.sleep(60)
 
-        users = client.lookup_users(chunk)
+        users = clients[0].lookup_users(chunk)
         for user in users:
             description = user.description
             description = unicodedata.normalize('NFKD',description).encode('ascii','ignore')
@@ -119,7 +120,6 @@ def GrabAllProfiles(path,csv,file,Type):
 # Source must be either 'screen_name' or 'id'
 def GrabTweets(path,Source,folder,Type):
     # get the api
-    client = get_twitter_client()
 
     Errors = open(path + folder + "Errors.text", "a+")
     Errors.write("Log of errors for run at " + str(datetime.datetime.now()) + ".\n")
@@ -128,6 +128,7 @@ def GrabTweets(path,Source,folder,Type):
     df = pd.read_csv(path + Source)
     Users = df[Type]
 
+    i = 0
     # for each user in the list of screen_names
     for name in Users:
 
@@ -137,6 +138,13 @@ def GrabTweets(path,Source,folder,Type):
             time.sleep(60)
 
         try:
+            if i%3 == 0:
+                client = clients[0]
+            elif i%3 == 1:
+                client = clients[1]
+            elif i%3 == 2:
+                client = clients[2]
+
             if Type == 'id':
                 Timeline = Cursor(client.user_timeline, user_id = name,tweet_mode='extended',count = 200).pages(16)
             elif Type == 'screen_name':
@@ -209,6 +217,8 @@ def GrabTweets(path,Source,folder,Type):
             Errors.write(str(name) + " had and error.\n")
             print "There was an error for " + str(name)
 
+        i = i + 1
+
 
 
 
@@ -216,7 +226,7 @@ def GetListMembers(owner,slug,FileName):
     members = []
 
     print "Grabbing those names!"
-    for member in Cursor(client.list_members, owner, slug).items():
+    for member in Cursor(clients[0].list_members, owner, slug).items():
         members.extend([member.screen_name])
 
     print "These names are great!"
@@ -265,7 +275,7 @@ def GrabFollowers(screen_name):
     print "Grabbing Followers"
 
     i = 1
-    Pages = Cursor(client.followers_ids,screen_name=screen_name).pages(max_pages)
+    Pages = Cursor(clients[0].followers_ids,screen_name=screen_name).pages(max_pages)
     for followers in Pages:
         for chunk in paginate(followers,100):
 
@@ -276,7 +286,7 @@ def GrabFollowers(screen_name):
                 print "waiting for connection to return"
                 time.sleep(60)
 
-            users = client.lookup_users(user_ids = chunk)
+            users = clients[0].lookup_users(user_ids = chunk)
             for user in users:
                 description = user.description
                 description = unicodedata.normalize('NFKD',description).encode('ascii','ignore')
@@ -329,7 +339,7 @@ def FindTweeters(query,path,FileName,since_id=None):
 
     i = 0
     print "Grabbing People that have tweeted " + query
-    for page in Cursor(client.search, q=query,count=100,result_type="recent",
+    for page in Cursor(clients[0].search, q=query,count=100,result_type="recent",
                         include_entities=True).pages(15):
         for status in page:
             if 'retweeted_status' in dir(status):

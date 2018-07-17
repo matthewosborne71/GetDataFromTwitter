@@ -605,3 +605,25 @@ def DrawWithComponent(G,pos,ew,Components):
     plt.legend(loc='best')
 
     plt.show()
+
+def GetRTed(path,Profiles,TweetFiles,kind):
+    RunningTally = []
+    nodes = list(Profiles[kind])
+    for node in nodes:
+        TempDF = pd.read_csv(path+TweetFiles+str(node)+"Retweets.csv")
+        TempCount = TempDF['RTUser'].value_counts()
+        RTUsers = list(TempCount.index)
+        RTCounts = list(TempCount.values)
+        Append = zip(RTUsers,RTCounts)
+        RunningTally.extend(Append)
+
+
+
+    RunningTallyDF = pd.DataFrame(RunningTally,columns=['RTUser','TotalTimesRTed'])
+    del RunningTally
+
+    TopRTers = RunningTallyDF.groupby(['RTUser']).sum().sort_values('TotalTimesRTed',ascending=False)
+    TotalRTs = sum(TopRTers['TotalTimesRTed'])
+    TopRTers['Perc'] = TopRTers['TotalTimesRTed']/TotalRTs
+
+    return TopRTers
